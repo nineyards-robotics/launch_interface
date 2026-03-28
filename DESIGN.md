@@ -178,7 +178,31 @@ class DryRunRegistry:
     process_actions: list[ExecuteLocal]
     composable_nodes: dict[str, list[ComposableNodeRecord]]
     includes: list[IncludeRecord]
+
+    # Source file tracking — maps each collected entity to the launch file it came from.
+    # Maintained via a stack pushed/popped by the IncludeLaunchDescription wrapper.
+    _source_file_stack: list[Path]
+    entity_source_files: dict[int, Path]  # id(entity) -> source file path
 ```
+
+### Source File Tracking
+
+Every entity we collect is tagged with the launch file it originated from. The mechanism:
+
+1. The `IncludeLaunchDescription` wrapper pushes the included file path onto
+   `registry._source_file_stack` before delegating to the original `execute()`, and
+   arranges a pop after the included description's entities have been visited (via an
+   `OpaqueFunction` appended to the returned entity list, mirroring how
+   `IncludeLaunchDescription` itself restores launch file locals).
+
+2. When the patched `__execute_process` or `LoadComposableNodes.execute` records an entity,
+   it also records `registry._source_file_stack[-1]` into `registry.entity_source_files`.
+
+3. Layer 2 reads `entity_source_files` and populates `source_file` on each `NodeInfo` /
+   `ComposableNodeInfo`.
+
+This gives downstream tools (visualisers, IDE integrations) a direct mapping from every
+node to the launch file that defined it.
 
 ### Context Setup
 
@@ -457,6 +481,7 @@ class NodeInfo:
     remappings: list[tuple[str, str]] = field(default_factory=list)
     additional_args: list[str] = field(default_factory=list)
     cmd: list[str] = field(default_factory=list)  # Full resolved command line
+    source_file: Path | None = None             # Launch file this node was defined in
 
 
 @dataclass
@@ -470,6 +495,7 @@ class ComposableNodeInfo:
     parameters: dict[str, Any] = field(default_factory=dict)  # Already fully resolved
     remappings: list[tuple[str, str]] = field(default_factory=list)
     extra_arguments: dict[str, Any] = field(default_factory=dict)
+    source_file: Path | None = None             # Launch file this node was defined in
 
 
 @dataclass
@@ -589,11 +615,14 @@ ROS 2 workspace).
 |------|------------|
 | **Name mangling fragility**: `_ExecuteLocal__execute_process` could be renamed upstream | Pin to tested ROS 2 distributions. Add a startup check that the attribute exists. |
 | **OpaqueFunction side effects**: Arbitrary Python runs during dry run | Document that launch files must be trusted. This is inherent to the approach. |
+| **`CommandSubstitution` side effects**: `$(command ...)` in XML/YAML executes a real subprocess during substitution resolution | Unavoidable — we need the output for correct resolution. Same behaviour as `ros2 launch` itself. |
+| **`PythonExpression` side effects**: `$(eval ...)` calls `eval()` on arbitrary Python during substitution resolution | Same as above — unavoidable and matches real launch behaviour. |
 | **Temp file lifetime**: Inline param dicts written to temp files may be cleaned up | Capture temp file contents in the patched execute before cleanup. |
 | **Incomplete composable node data**: `LoadComposableNodes` requires `composition_interfaces` types | This is a standard ROS 2 package, always available. |
 | **Launch arguments not provided**: Substitution resolution fails | Provide `get_launch_arguments()` so callers can discover required args first. |
 | **Python launch files with import-time side effects** | Out of scope — same risk as `ros2 launch` itself. |
 | **Event handlers that depend on process lifecycle** (e.g. `OnProcessExit` triggers) | These handlers will fire with our synthetic completion. Nodes launched by `OnProcessExit` callbacks will still be captured. Need to verify this works correctly. |
+| **`TimerAction`-gated nodes**: Nodes launched after a delay will not be captured | Out of scope for initial implementation. The dry run completes as soon as all futures resolve (immediately), so timer-delayed actions never fire. |
 
 
 ## Future Considerations
