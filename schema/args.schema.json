@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/nineyards-robotics/launch_interface/schema/args.schema.json",
+  "title": "launch_interface args output",
+  "description": "Declared launch arguments produced by `launch_interface args`.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["name", "default", "description"],
+    "additionalProperties": false,
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "Argument name."
+      },
+      "default": {
+        "type": ["string", "null"],
+        "description": "Default value, or null if the argument is required."
+      },
+      "description": {
+        "type": "string",
+        "description": "Human-readable description."
+      }
+    }
+  }
+}

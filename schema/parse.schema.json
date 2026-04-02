@@ -1,0 +1,260 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/nineyards-robotics/launch_interface/schema/parse.schema.json",
+  "title": "launch_interface parse output",
+  "description": "The resolved launch graph produced by `launch_interface parse`.",
+  "type": "object",
+  "required": ["launch_file", "launch_arguments", "declared_arguments", "nodes", "includes"],
+  "additionalProperties": false,
+  "properties": {
+    "launch_file": {
+      "type": "string",
+      "description": "Absolute path to the root launch file."
+    },
+    "launch_arguments": {
+      "type": "object",
+      "description": "Launch arguments provided for this parse.",
+      "additionalProperties": { "type": "string" }
+    },
+    "declared_arguments": {
+      "type": "object",
+      "description": "Launch arguments declared by the root launch file.",
+      "additionalProperties": {
+        "$ref": "#/$defs/declared_argument"
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "description": "Flat list of all resolved nodes.",
+      "items": {
+        "oneOf": [
+          { "$ref": "#/$defs/node" },
+          { "$ref": "#/$defs/composable_node_container" }
+        ]
+      }
+    },
+    "includes": {
+      "type": "array",
+      "description": "Include tree — records which launch files were included and with what arguments.",
+      "items": { "$ref": "#/$defs/include" }
+    }
+  },
+  "$defs": {
+    "declared_argument": {
+      "type": "object",
+      "required": ["default", "description"],
+      "additionalProperties": false,
+      "properties": {
+        "default": {
+          "type": ["string", "null"],
+          "description": "Default value, or null if required."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of the argument."
+        }
+      }
+    },
+    "remapping": {
+      "type": "array",
+      "prefixItems": [
+        { "type": "string", "description": "Source name." },
+        { "type": "string", "description": "Destination name." }
+      ],
+      "items": false,
+      "description": "A [src, dst] remapping pair."
+    },
+    "param_source": {
+      "oneOf": [
+        { "$ref": "#/$defs/param_source_file" },
+        { "$ref": "#/$defs/param_source_inline" }
+      ]
+    },
+    "param_source_file": {
+      "type": "object",
+      "required": ["type", "path"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "file" },
+        "path": {
+          "type": "string",
+          "description": "Absolute path to the YAML parameter file."
+        }
+      }
+    },
+    "param_source_inline": {
+      "type": "object",
+      "required": ["type", "name", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "inline" },
+        "name": {
+          "type": "string",
+          "description": "Parameter name."
+        },
+        "value": {
+          "description": "Parameter value (any YAML scalar)."
+        }
+      }
+    },
+    "node_base": {
+      "type": "object",
+      "required": [
+        "type", "package", "executable", "name", "namespace",
+        "fully_qualified_name", "remappings", "parameter_sources",
+        "parameters", "cmd", "source_file"
+      ],
+      "properties": {
+        "package": {
+          "type": "string",
+          "description": "ROS package name."
+        },
+        "executable": {
+          "type": "string",
+          "description": "Executable name within the package."
+        },
+        "name": {
+          "type": ["string", "null"],
+          "description": "Node name (bare, without namespace). Null if unspecified."
+        },
+        "namespace": {
+          "type": "string",
+          "description": "Resolved namespace."
+        },
+        "fully_qualified_name": {
+          "type": ["string", "null"],
+          "description": "Full /namespace/name. Null if name is unspecified."
+        },
+        "remappings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/remapping" },
+          "description": "Resolved remapping rules."
+        },
+        "parameter_sources": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/param_source" },
+          "description": "Ordered parameter sources from the command line."
+        },
+        "parameters": {
+          "type": "object",
+          "description": "Merged resolved parameters.",
+          "additionalProperties": true
+        },
+        "cmd": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Full resolved command line."
+        },
+        "source_file": {
+          "type": ["string", "null"],
+          "description": "Launch file this node was defined in."
+        }
+      }
+    },
+    "node": {
+      "allOf": [
+        { "$ref": "#/$defs/node_base" },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "node" }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "composable_node_container": {
+      "allOf": [
+        { "$ref": "#/$defs/node_base" },
+        {
+          "type": "object",
+          "required": ["composable_nodes"],
+          "properties": {
+            "type": { "const": "composable_node_container" },
+            "composable_nodes": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/composable_node" }
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "composable_node": {
+      "type": "object",
+      "required": [
+        "type", "package", "plugin", "name", "namespace",
+        "fully_qualified_name", "remappings", "parameters",
+        "extra_arguments", "source_file"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "composable_node" },
+        "package": {
+          "type": "string",
+          "description": "ROS package name."
+        },
+        "plugin": {
+          "type": "string",
+          "description": "Plugin class identifier."
+        },
+        "name": {
+          "type": ["string", "null"],
+          "description": "Node name."
+        },
+        "namespace": {
+          "type": "string",
+          "description": "Resolved namespace."
+        },
+        "fully_qualified_name": {
+          "type": ["string", "null"],
+          "description": "Full /namespace/name."
+        },
+        "remappings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/remapping" },
+          "description": "Resolved remapping rules."
+        },
+        "parameters": {
+          "type": "object",
+          "description": "Fully resolved parameters.",
+          "additionalProperties": true
+        },
+        "extra_arguments": {
+          "type": "object",
+          "description": "Extra arguments passed to the component loader.",
+          "additionalProperties": true
+        },
+        "source_file": {
+          "type": ["string", "null"],
+          "description": "Launch file this node was defined in."
+        }
+      }
+    },
+    "include": {
+      "type": "object",
+      "required": ["source_file", "included_file", "launch_arguments", "includes"],
+      "additionalProperties": false,
+      "properties": {
+        "source_file": {
+          "type": "string",
+          "description": "The file containing the include statement."
+        },
+        "included_file": {
+          "type": "string",
+          "description": "The file being included."
+        },
+        "launch_arguments": {
+          "type": "object",
+          "description": "Arguments passed to the included file.",
+          "additionalProperties": { "type": "string" }
+        },
+        "includes": {
+          "type": "array",
+          "description": "Nested includes from the included file.",
+          "items": { "$ref": "#/$defs/include" }
+        }
+      }
+    }
+  }
+}

@@ -299,7 +299,7 @@ resolved attributes.
 
 ### Data Extraction by Entity Type
 
-#### `Node` (and `LifecycleNode`)
+#### `Node`
 
 | Field | Source | Notes |
 |-------|--------|-------|
@@ -310,7 +310,6 @@ resolved attributes.
 | Remappings | `.expanded_remapping_rules` property | `list[tuple[str, str]]` of `(src, dst)` |
 | Parameter sources | Parse `--params-file` and `-p` args from `.cmd` | See Layer 3. Returns `list[ParamSource]` where each is either a file path or inline `key:=value`. |
 | Additional arguments | `.cmd` beyond the core ros2 run args | |
-| Is lifecycle node | `isinstance(action, LifecycleNode)` | |
 
 **Package and executable resolution**: The `node_package` and `node_executable` properties
 return raw substitution lists, not resolved strings. However, the resolved values are embedded
@@ -394,26 +393,19 @@ loads parameters namespaced under the **fully qualified node name** within the Y
 
 ### Resolution Algorithm
 
+Parameter resolution always runs as part of `parse` — there is no opt-out. The resolved
+parameters appear in the output alongside the source descriptors.
+
 ```python
-def resolve_parameters(
-    node_info: NodeInfo,
-    *,
-    load_files: bool = True,
-) -> dict[str, Any]:
+def resolve_parameters(node_info: NodeInfo) -> dict[str, Any]:
     """
     Merge all parameter sources for a node into a final dict.
-
-    Args:
-        node_info: The extracted node information (from Layer 2).
-        load_files: If True, load and parse YAML parameter files.
-                    If False, return ParamSource descriptors only.
     """
     merged = {}
     for source in node_info.parameter_sources:
         if isinstance(source, ParamFileSource):
-            if load_files:
-                params = _load_param_yaml(source.path, node_info.fully_qualified_name)
-                merged.update(params)
+            params = _load_param_yaml(source.path, node_info.fully_qualified_name)
+            merged.update(params)
         elif isinstance(source, InlineParamSource):
             merged[source.name] = source.value
     return merged
@@ -445,7 +437,6 @@ from typing import Any
 class NodeType(Enum):
     """Discriminator for the kind of node."""
     NODE = "node"
-    LIFECYCLE_NODE = "lifecycle_node"
     COMPOSABLE_NODE_CONTAINER = "composable_node_container"
     COMPOSABLE_NODE = "composable_node"
 
@@ -492,6 +483,7 @@ class ComposableNodeInfo:
     plugin: str = ""                            # Plugin class identifier
     name: str | None = None
     namespace: str = ""
+    fully_qualified_name: str | None = None     # /namespace/name (None if name unspecified)
     parameters: dict[str, Any] = field(default_factory=dict)  # Already fully resolved
     remappings: list[tuple[str, str]] = field(default_factory=list)
     extra_arguments: dict[str, Any] = field(default_factory=dict)
@@ -511,7 +503,7 @@ class IncludeInfo:
     source_file: Path                           # The file that contains the include
     included_file: Path                         # The file being included
     launch_arguments: dict[str, str]            # Arguments passed to the include
-    nodes: list[NodeInfo | ContainerInfo] = field(default_factory=list)  # Nodes from this include
+    includes: list[IncludeInfo] = field(default_factory=list)  # Nested includes (recursive)
 
 
 @dataclass
@@ -556,45 +548,108 @@ discriminator.
 
 ## Public API
 
-### Python
+### CLI (primary interface)
 
-```python
-from launch_interface import dry_run, resolve_parameters
+The CLI is the primary interface, designed to be called from TypeScript (via subprocess + JSON)
+and other languages. All commands output JSON to stdout.
 
-# Basic usage — get the resolved launch tree
-model = dry_run(
-    "path/to/my_launch.py",
-    launch_arguments={"robot_name": "atlas", "use_sim": "true"},
-)
-
-# Inspect nodes
-for node in model.nodes:
-    print(f"{node.fully_qualified_name}: {node.package}/{node.executable}")
-    print(f"  remappings: {node.remappings}")
-    print(f"  param sources: {node.parameter_sources}")
-
-# Optionally resolve parameters (loads YAML files)
-resolve_parameters(model)
-for node in model.nodes:
-    print(f"  parameters: {node.parameters}")
-
-# Serialise to JSON (for TypeScript consumption)
-from launch_interface import to_json
-print(to_json(model, indent=2))
+```
+launch_interface parse <launch_file> [key:=value ...]
+launch_interface args <launch_file>
 ```
 
-### Argument Introspection (without full dry run)
+#### `launch_interface parse`
 
-```python
-from launch_interface import get_launch_arguments
+Performs a full dry-run execution of the launch file, resolves all substitutions, conditionals,
+includes, and scoping, and outputs the complete resolved launch graph as JSON. Parameters are
+always fully resolved (YAML files loaded and merged).
 
-# Get declared arguments without executing (static analysis — no context needed)
-args = get_launch_arguments("path/to/my_launch.py")
-for name, default, description in args:
-    print(f"  {name} (default: {default}): {description}")
+Launch arguments are passed as `key:=value` pairs, matching the `ros2 launch` convention.
+
+```bash
+launch_interface parse path/to/my_launch.py robot_name:=atlas use_sim:=true
 ```
 
-This wraps the same logic as `ros2 launch --show-args`.
+#### `launch_interface args`
+
+Lists the declared launch arguments for a launch file without performing a full dry run.
+Wraps the same logic as `ros2 launch --show-args`.
+
+```bash
+launch_interface args path/to/my_launch.py
+```
+
+### Python (internal)
+
+The Python API exists to implement the CLI — it is not a public interface for external Python
+consumers. The internal structure is documented in the architecture sections below, but the
+CLI JSON output is the only stable contract.
+
+
+## Testing
+
+### Strategy
+
+Tests require a sourced ROS 2 installation — the library only works in a ROS environment and
+we test as we play. No mocking of the ROS package index or workspace infrastructure.
+
+### Test Workspace
+
+A self-contained test workspace lives inside the repo at `test/test_ws/`. It contains minimal
+ROS packages with dummy nodes that exist solely to give the launch system real packages and
+executables to resolve against.
+
+```
+launch_interface/
+  launch_interface/
+    __init__.py
+    ...
+  test/
+    conftest.py                  # session fixture: builds test_ws, sources it
+    test_parse.py
+    test_args.py
+    test_ws/
+      COLCON_IGNORE              # outer workspace builds skip this
+      .gitignore                 # ignores build/ install/ log/
+      src/
+        test_nodes/
+          package.xml
+          setup.py
+          test_nodes/
+            node_a.py
+            ...
+      launch_files/
+        simple_node.launch.py
+        ...
+      params/
+        test_params.yaml
+```
+
+- **`COLCON_IGNORE`**: Prevents `colcon build` at the outer workspace level from descending
+  into the test workspace.
+- **`.gitignore`**: Excludes `build/`, `install/`, and `log/` directories from version control.
+- **`conftest.py`**: A session-scoped pytest fixture builds the test workspace once
+  (`colcon build` inside `test/test_ws/`), sources `test/test_ws/install/setup.bash`, and
+  configures the environment for all tests in the session.
+
+### Test Cases
+
+Tests call `launch_interface parse` (via subprocess or the Python API) against launch files in
+the test workspace and assert the JSON output matches expected structure.
+
+Test matrix:
+
+| # | Test file | Exercises |
+|---|-----------|-----------|
+| 1 | Simple single node (Python) | Basic `Node()`, name, namespace, package, executable |
+| 2 | Node with parameters (Python) | `--params-file`, inline `-p`, parameter merging |
+| 3 | Remappings and arguments (Python) | `DeclareLaunchArgument`, `LaunchConfiguration`, remappings |
+| 4 | Include chain (Python→Python) | `IncludeLaunchDescription`, source file tracking, arg passing |
+| 5 | Composable nodes (Python) | `ComposableNodeContainer` + `LoadComposableNodes` |
+| 6 | Conditional nodes (Python) | `IfCondition`/`UnlessCondition` — some nodes present, some not |
+| 7 | XML launch file | Same as #1 but XML frontend |
+| 8 | YAML launch file | Same as #1 but YAML frontend |
+| 9 | Namespace scoping via `GroupAction` | `PushRosNamespace` inside group |
 
 
 ## Dependencies
