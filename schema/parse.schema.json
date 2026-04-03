@@ -97,14 +97,16 @@
         }
       }
     },
-    "node_base": {
+    "node": {
       "type": "object",
       "required": [
         "type", "package", "executable", "name", "namespace",
         "fully_qualified_name", "remappings", "parameter_sources",
         "parameters", "cmd", "source_file"
       ],
+      "additionalProperties": false,
       "properties": {
+        "type": { "const": "node" },
         "package": {
           "type": "string",
           "description": "ROS package name."
@@ -151,34 +153,65 @@
         }
       }
     },
-    "node": {
-      "allOf": [
-        { "$ref": "#/$defs/node_base" },
-        {
-          "type": "object",
-          "properties": {
-            "type": { "const": "node" }
-          },
-          "additionalProperties": false
-        }
-      ]
-    },
     "composable_node_container": {
-      "allOf": [
-        { "$ref": "#/$defs/node_base" },
-        {
+      "type": "object",
+      "required": [
+        "type", "package", "executable", "name", "namespace",
+        "fully_qualified_name", "remappings", "parameter_sources",
+        "parameters", "cmd", "source_file", "composable_nodes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "composable_node_container" },
+        "package": {
+          "type": "string",
+          "description": "ROS package name."
+        },
+        "executable": {
+          "type": "string",
+          "description": "Executable name within the package."
+        },
+        "name": {
+          "type": ["string", "null"],
+          "description": "Node name (bare, without namespace). Null if unspecified."
+        },
+        "namespace": {
+          "type": "string",
+          "description": "Resolved namespace."
+        },
+        "fully_qualified_name": {
+          "type": ["string", "null"],
+          "description": "Full /namespace/name. Null if name is unspecified."
+        },
+        "remappings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/remapping" },
+          "description": "Resolved remapping rules."
+        },
+        "parameter_sources": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/param_source" },
+          "description": "Ordered parameter sources from the command line."
+        },
+        "parameters": {
           "type": "object",
-          "required": ["composable_nodes"],
-          "properties": {
-            "type": { "const": "composable_node_container" },
-            "composable_nodes": {
-              "type": "array",
-              "items": { "$ref": "#/$defs/composable_node" }
-            }
-          },
-          "additionalProperties": false
+          "description": "Merged resolved parameters.",
+          "additionalProperties": true
+        },
+        "cmd": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Full resolved command line."
+        },
+        "source_file": {
+          "type": ["string", "null"],
+          "description": "Launch file this node was defined in."
+        },
+        "composable_nodes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/composable_node" }
         }
-      ]
+      }
     },
     "composable_node": {
       "type": "object",

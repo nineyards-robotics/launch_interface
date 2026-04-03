@@ -1,0 +1,7 @@
+[
+  {
+    "name": "required_param",
+    "default": null,
+    "description": "A required parameter with no default"
+  }
+]

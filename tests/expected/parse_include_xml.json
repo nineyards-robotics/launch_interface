@@ -1,0 +1,41 @@
+{
+  "launch_file": "<TEST_WS>/src/test_nodes/launch/include_xml.launch.py",
+  "launch_arguments": {},
+  "declared_arguments": {},
+  "nodes": [
+    {
+      "type": "node",
+      "package": "test_nodes",
+      "executable": "node_a",
+      "name": "python_node",
+      "namespace": "/test_ns",
+      "fully_qualified_name": "/test_ns/python_node",
+      "remappings": [],
+      "parameter_sources": [],
+      "parameters": {},
+      "cmd": ["ros2", "run", "test_nodes", "node_a"],
+      "source_file": "<TEST_WS>/src/test_nodes/launch/include_xml.launch.py"
+    },
+    {
+      "type": "node",
+      "package": "test_nodes",
+      "executable": "node_a",
+      "name": "xml_node",
+      "namespace": "/test_ns",
+      "fully_qualified_name": "/test_ns/xml_node",
+      "remappings": [],
+      "parameter_sources": [],
+      "parameters": {},
+      "cmd": ["ros2", "run", "test_nodes", "node_a"],
+      "source_file": "<INSTALL>/test_nodes/share/test_nodes/launch/simple_node.launch.xml"
+    }
+  ],
+  "includes": [
+    {
+      "source_file": "<TEST_WS>/src/test_nodes/launch/include_xml.launch.py",
+      "included_file": "<INSTALL>/test_nodes/share/test_nodes/launch/simple_node.launch.xml",
+      "launch_arguments": {},
+      "includes": []
+    }
+  ]
+}

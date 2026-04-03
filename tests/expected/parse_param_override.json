@@ -1,0 +1,30 @@
+{
+  "launch_file": "<TEST_WS>/src/test_nodes/launch/param_override.launch.py",
+  "launch_arguments": {},
+  "declared_arguments": {},
+  "nodes": [
+    {
+      "type": "node",
+      "package": "test_nodes",
+      "executable": "node_a",
+      "name": "override_node",
+      "namespace": "/test_ns",
+      "fully_qualified_name": "/test_ns/override_node",
+      "remappings": [],
+      "parameter_sources": [
+        {
+          "type": "file",
+          "path": "<INSTALL>/test_nodes/share/test_nodes/params/override_params.yaml"
+        }
+      ],
+      "parameters": {
+        "shared_param": "from_inline",
+        "node_only_param": "only_here",
+        "wildcard_only_param": "everywhere"
+      },
+      "cmd": ["ros2", "run", "test_nodes", "node_a"],
+      "source_file": "<TEST_WS>/src/test_nodes/launch/param_override.launch.py"
+    }
+  ],
+  "includes": []
+}

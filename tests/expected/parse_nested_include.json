@@ -1,0 +1,65 @@
+{
+  "launch_file": "<TEST_WS>/src/test_nodes/launch/nested_include_root.launch.py",
+  "launch_arguments": {},
+  "declared_arguments": {},
+  "nodes": [
+    {
+      "type": "node",
+      "package": "test_nodes",
+      "executable": "node_a",
+      "name": "root_node",
+      "namespace": "/root_ns",
+      "fully_qualified_name": "/root_ns/root_node",
+      "remappings": [],
+      "parameter_sources": [],
+      "parameters": {},
+      "cmd": ["ros2", "run", "test_nodes", "node_a"],
+      "source_file": "<TEST_WS>/src/test_nodes/launch/nested_include_root.launch.py"
+    },
+    {
+      "type": "node",
+      "package": "test_nodes",
+      "executable": "node_a",
+      "name": "custom_mid",
+      "namespace": "/mid_ns",
+      "fully_qualified_name": "/mid_ns/custom_mid",
+      "remappings": [],
+      "parameter_sources": [],
+      "parameters": {},
+      "cmd": ["ros2", "run", "test_nodes", "node_a"],
+      "source_file": "<INSTALL>/test_nodes/share/test_nodes/launch/nested_include_mid.launch.py"
+    },
+    {
+      "type": "node",
+      "package": "test_nodes",
+      "executable": "node_b",
+      "name": "nested_child",
+      "namespace": "/child_ns",
+      "fully_qualified_name": "/child_ns/nested_child",
+      "remappings": [],
+      "parameter_sources": [],
+      "parameters": {},
+      "cmd": ["ros2", "run", "test_nodes", "node_b"],
+      "source_file": "<INSTALL>/test_nodes/share/test_nodes/launch/included.launch.py"
+    }
+  ],
+  "includes": [
+    {
+      "source_file": "<TEST_WS>/src/test_nodes/launch/nested_include_root.launch.py",
+      "included_file": "<INSTALL>/test_nodes/share/test_nodes/launch/nested_include_mid.launch.py",
+      "launch_arguments": {
+        "mid_name": "custom_mid"
+      },
+      "includes": [
+        {
+          "source_file": "<INSTALL>/test_nodes/share/test_nodes/launch/nested_include_mid.launch.py",
+          "included_file": "<INSTALL>/test_nodes/share/test_nodes/launch/included.launch.py",
+          "launch_arguments": {
+            "child_name": "nested_child"
+          },
+          "includes": []
+        }
+      ]
+    }
+  ]
+}

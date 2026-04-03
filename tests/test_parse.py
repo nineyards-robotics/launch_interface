@@ -5,6 +5,9 @@ diffs the JSON output against an expected file in ``tests/expected/``.
 """
 from __future__ import annotations
 
+import subprocess
+import sys
+
 
 # 1. Simple single node (Python)
 def test_simple_node(run_parse, launch_file_path, assert_json):
@@ -80,3 +83,70 @@ def test_yaml_launch_file(run_parse, launch_file_path, assert_json):
 def test_namespace_scoping(run_parse, launch_file_path, assert_json):
     actual = run_parse(launch_file_path('namespace_scoping.launch.py'))
     assert_json(actual, 'parse_namespace_scoping.json')
+
+
+# --------------------------------------------------------------------------
+# New test cases
+# --------------------------------------------------------------------------
+
+
+# 10. Missing required launch argument — should fail with non-zero exit
+def test_missing_required_arg(test_ws_env, launch_file_path):
+    result = subprocess.run(
+        [sys.executable, '-m', 'launch_interface', 'parse',
+         launch_file_path('required_arg.launch.py')],
+        capture_output=True,
+        text=True,
+        env=test_ws_env,
+    )
+    assert result.returncode != 0, (
+        'parse should fail when a required launch argument is not provided'
+    )
+
+
+# 11. ExecuteProcess (non-Node) — raw ExecuteProcess excluded, only Node extracted
+def test_execute_process(run_parse, launch_file_path, assert_json):
+    actual = run_parse(launch_file_path('execute_process.launch.py'))
+    assert_json(actual, 'parse_execute_process.json')
+
+
+# 12. Multiple nodes in a single launch file — ordering preserved
+def test_multiple_nodes(run_parse, launch_file_path, assert_json):
+    actual = run_parse(launch_file_path('multiple_nodes.launch.py'))
+    assert_json(actual, 'parse_multiple_nodes.json')
+
+
+# 13. OnProcessExit — node launched by event handler is captured
+def test_on_process_exit(run_parse, launch_file_path, assert_json):
+    actual = run_parse(launch_file_path('on_process_exit.launch.py'))
+    assert_json(actual, 'parse_on_process_exit.json')
+
+
+# 14. Include XML from Python — cross-format include
+def test_include_xml(run_parse, launch_file_path, assert_json):
+    actual = run_parse(launch_file_path('include_xml.launch.py'))
+    assert_json(actual, 'parse_include_xml.json')
+
+
+# 15. Nested includes (root → mid → included) — deep include tree
+def test_nested_include(run_parse, launch_file_path, assert_json):
+    actual = run_parse(launch_file_path('nested_include_root.launch.py'))
+    assert_json(actual, 'parse_nested_include.json')
+
+
+# 16. OpaqueFunction — dynamically created node is captured
+def test_opaque_function(run_parse, launch_file_path, assert_json):
+    actual = run_parse(launch_file_path('opaque_function.launch.py'))
+    assert_json(actual, 'parse_opaque_function.json')
+
+
+# 17. Parameter merge order — wildcard < node-specific < inline
+def test_param_override(run_parse, launch_file_path, assert_json):
+    actual = run_parse(launch_file_path('param_override.launch.py'))
+    assert_json(actual, 'parse_param_override.json')
+
+
+# 18. EnvironmentVariable substitution — node name from env var
+def test_env_var_substitution(run_parse, launch_file_path, assert_json):
+    actual = run_parse(launch_file_path('env_var_substitution.launch.py'))
+    assert_json(actual, 'parse_env_var.json')

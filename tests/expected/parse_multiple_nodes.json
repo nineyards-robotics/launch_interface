@@ -1,0 +1,47 @@
+{
+  "launch_file": "<TEST_WS>/src/test_nodes/launch/multiple_nodes.launch.py",
+  "launch_arguments": {},
+  "declared_arguments": {},
+  "nodes": [
+    {
+      "type": "node",
+      "package": "test_nodes",
+      "executable": "node_a",
+      "name": "first",
+      "namespace": "/ns_a",
+      "fully_qualified_name": "/ns_a/first",
+      "remappings": [],
+      "parameter_sources": [],
+      "parameters": {},
+      "cmd": ["ros2", "run", "test_nodes", "node_a"],
+      "source_file": "<TEST_WS>/src/test_nodes/launch/multiple_nodes.launch.py"
+    },
+    {
+      "type": "node",
+      "package": "test_nodes",
+      "executable": "node_b",
+      "name": "second",
+      "namespace": "/ns_b",
+      "fully_qualified_name": "/ns_b/second",
+      "remappings": [],
+      "parameter_sources": [],
+      "parameters": {},
+      "cmd": ["ros2", "run", "test_nodes", "node_b"],
+      "source_file": "<TEST_WS>/src/test_nodes/launch/multiple_nodes.launch.py"
+    },
+    {
+      "type": "node",
+      "package": "test_nodes",
+      "executable": "node_a",
+      "name": "third",
+      "namespace": "/ns_a",
+      "fully_qualified_name": "/ns_a/third",
+      "remappings": [],
+      "parameter_sources": [],
+      "parameters": {},
+      "cmd": ["ros2", "run", "test_nodes", "node_a"],
+      "source_file": "<TEST_WS>/src/test_nodes/launch/multiple_nodes.launch.py"
+    }
+  ],
+  "includes": []
+}

@@ -1,0 +1,34 @@
+{
+  "launch_file": "<TEST_WS>/src/test_nodes/launch/opaque_function.launch.py",
+  "launch_arguments": {},
+  "declared_arguments": {},
+  "nodes": [
+    {
+      "type": "node",
+      "package": "test_nodes",
+      "executable": "node_b",
+      "name": "static_node",
+      "namespace": "/test_ns",
+      "fully_qualified_name": "/test_ns/static_node",
+      "remappings": [],
+      "parameter_sources": [],
+      "parameters": {},
+      "cmd": ["ros2", "run", "test_nodes", "node_b"],
+      "source_file": "<TEST_WS>/src/test_nodes/launch/opaque_function.launch.py"
+    },
+    {
+      "type": "node",
+      "package": "test_nodes",
+      "executable": "node_a",
+      "name": "dynamic_node",
+      "namespace": "/test_ns",
+      "fully_qualified_name": "/test_ns/dynamic_node",
+      "remappings": [],
+      "parameter_sources": [],
+      "parameters": {},
+      "cmd": ["ros2", "run", "test_nodes", "node_a"],
+      "source_file": "<TEST_WS>/src/test_nodes/launch/opaque_function.launch.py"
+    }
+  ],
+  "includes": []
+}

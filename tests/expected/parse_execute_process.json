@@ -1,0 +1,21 @@
+{
+  "launch_file": "<TEST_WS>/src/test_nodes/launch/execute_process.launch.py",
+  "launch_arguments": {},
+  "declared_arguments": {},
+  "nodes": [
+    {
+      "type": "node",
+      "package": "test_nodes",
+      "executable": "node_a",
+      "name": "real_node",
+      "namespace": "/test_ns",
+      "fully_qualified_name": "/test_ns/real_node",
+      "remappings": [],
+      "parameter_sources": [],
+      "parameters": {},
+      "cmd": ["ros2", "run", "test_nodes", "node_a"],
+      "source_file": "<TEST_WS>/src/test_nodes/launch/execute_process.launch.py"
+    }
+  ],
+  "includes": []
+}

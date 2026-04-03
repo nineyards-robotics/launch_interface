@@ -58,6 +58,9 @@ def test_ws_env() -> dict[str, str]:
             key, _, value = entry.partition('=')
             env[key] = value
 
+    # Provide a known env var for the env_var_substitution test
+    env['TEST_NODE_NAME'] = 'env_resolved_node'
+
     return env
 
 

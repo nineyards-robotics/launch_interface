@@ -22,3 +22,15 @@ def test_args_remappings_and_args(run_args, launch_file_path, assert_json):
 def test_args_conditional_nodes(run_args, launch_file_path, assert_json):
     actual = run_args(launch_file_path('conditional_nodes.launch.py'))
     assert_json(actual, 'args_conditional_nodes.json')
+
+
+# Include chain — args should only return root-level declared arguments
+def test_args_include_chain(run_args, launch_file_path, assert_json):
+    actual = run_args(launch_file_path('include_chain.launch.py'))
+    assert_json(actual, 'args_include_chain.json')
+
+
+# Required argument (no default) — default should be null
+def test_args_required_arg(run_args, launch_file_path, assert_json):
+    actual = run_args(launch_file_path('required_arg.launch.py'))
+    assert_json(actual, 'args_required_arg.json')

@@ -1,0 +1,9 @@
+/test_ns/override_node:
+  ros__parameters:
+    shared_param: "from_node_specific"
+    node_only_param: "only_here"
+
+/**:
+  ros__parameters:
+    shared_param: "from_wildcard"
+    wildcard_only_param: "everywhere"
