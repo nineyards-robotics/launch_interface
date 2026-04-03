@@ -6,7 +6,11 @@ build-backend = "setuptools.build_meta"
 name = "launch-interface"
 version = "0.0.1"
 description = "Dry-run execution of ROS 2 launch files with structured JSON output"
-requires-python = ">=3.10"
+license = "Apache-2.0"
+dynamic = ["requires-python"]
+maintainers = [
+    {name = "Alistair English", email = "hello@alistairenglish.com"},
+]
 
 [project.scripts]
 launch_interface = "launch_interface.cli:main"
