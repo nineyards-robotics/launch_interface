@@ -1,0 +1,21 @@
+{
+  "launch_file": "<TEST_WS>/src/test_nodes/launch/simple_node.launch.yaml",
+  "launch_arguments": {},
+  "declared_arguments": {},
+  "nodes": [
+    {
+      "type": "node",
+      "package": "test_nodes",
+      "executable": "node_a",
+      "name": "yaml_node",
+      "namespace": "/test_ns",
+      "fully_qualified_name": "/test_ns/yaml_node",
+      "remappings": [],
+      "parameter_sources": [],
+      "parameters": {},
+      "cmd": ["ros2", "run", "test_nodes", "node_a", "--ros-args", "-r", "__node:=yaml_node", "-r", "__ns:=/test_ns"],
+      "source_file": "<TEST_WS>/src/test_nodes/launch/simple_node.launch.yaml"
+    }
+  ],
+  "includes": []
+}

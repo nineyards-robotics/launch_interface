@@ -1,0 +1,43 @@
+{
+  "launch_file": "<TEST_WS>/src/test_nodes/launch/include_chain.launch.py",
+  "launch_arguments": {},
+  "declared_arguments": {},
+  "nodes": [
+    {
+      "type": "node",
+      "package": "test_nodes",
+      "executable": "node_a",
+      "name": "parent_node",
+      "namespace": "/parent_ns",
+      "fully_qualified_name": "/parent_ns/parent_node",
+      "remappings": [],
+      "parameter_sources": [],
+      "parameters": {},
+      "cmd": ["ros2", "run", "test_nodes", "node_a", "--ros-args", "-r", "__node:=parent_node", "-r", "__ns:=/parent_ns"],
+      "source_file": "<TEST_WS>/src/test_nodes/launch/include_chain.launch.py"
+    },
+    {
+      "type": "node",
+      "package": "test_nodes",
+      "executable": "node_b",
+      "name": "included_child",
+      "namespace": "/child_ns",
+      "fully_qualified_name": "/child_ns/included_child",
+      "remappings": [],
+      "parameter_sources": [],
+      "parameters": {},
+      "cmd": ["ros2", "run", "test_nodes", "node_b", "--ros-args", "-r", "__node:=included_child", "-r", "__ns:=/child_ns"],
+      "source_file": "<INSTALL>/test_nodes/share/test_nodes/launch/included.launch.py"
+    }
+  ],
+  "includes": [
+    {
+      "source_file": "<TEST_WS>/src/test_nodes/launch/include_chain.launch.py",
+      "included_file": "<INSTALL>/test_nodes/share/test_nodes/launch/included.launch.py",
+      "launch_arguments": {
+        "child_name": "included_child"
+      },
+      "includes": []
+    }
+  ]
+}

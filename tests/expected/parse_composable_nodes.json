@@ -1,0 +1,51 @@
+{
+  "launch_file": "<TEST_WS>/src/test_nodes/launch/composable_nodes.launch.py",
+  "launch_arguments": {},
+  "declared_arguments": {},
+  "nodes": [
+    {
+      "type": "composable_node_container",
+      "package": "rclcpp_components",
+      "executable": "component_container",
+      "name": "my_container",
+      "namespace": "/test_ns",
+      "fully_qualified_name": "/test_ns/my_container",
+      "remappings": [],
+      "parameter_sources": [],
+      "parameters": {},
+      "cmd": ["ros2", "run", "rclcpp_components", "component_container", "--ros-args", "-r", "__node:=my_container", "-r", "__ns:=/test_ns"],
+      "source_file": "<TEST_WS>/src/test_nodes/launch/composable_nodes.launch.py",
+      "composable_nodes": [
+        {
+          "type": "composable_node",
+          "package": "composition",
+          "plugin": "composition::Talker",
+          "name": "talker",
+          "namespace": "/test_ns",
+          "fully_qualified_name": "/test_ns/talker",
+          "remappings": [],
+          "parameters": {},
+          "extra_arguments": {},
+          "source_file": "<TEST_WS>/src/test_nodes/launch/composable_nodes.launch.py"
+        },
+        {
+          "type": "composable_node",
+          "package": "composition",
+          "plugin": "composition::Listener",
+          "name": "listener",
+          "namespace": "/test_ns",
+          "fully_qualified_name": "/test_ns/listener",
+          "remappings": [
+            ["chatter", "/custom_chatter"]
+          ],
+          "parameters": {
+            "use_sim_time": true
+          },
+          "extra_arguments": {},
+          "source_file": "<TEST_WS>/src/test_nodes/launch/composable_nodes.launch.py"
+        }
+      ]
+    }
+  ],
+  "includes": []
+}

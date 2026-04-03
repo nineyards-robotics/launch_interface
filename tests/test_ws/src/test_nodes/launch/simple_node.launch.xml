@@ -1,0 +1,3 @@
+<launch>
+  <node pkg="test_nodes" exec="node_a" name="xml_node" namespace="/test_ns" />
+</launch>

@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "launch-interface"
+version = "0.0.1"
+description = "Dry-run execution of ROS 2 launch files with structured JSON output"
+requires-python = ">=3.10"
+
+[project.scripts]
+launch_interface = "launch_interface.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["launch_interface*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

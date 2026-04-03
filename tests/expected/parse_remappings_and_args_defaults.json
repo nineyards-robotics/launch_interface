@@ -1,0 +1,33 @@
+{
+  "launch_file": "<TEST_WS>/src/test_nodes/launch/remappings_and_args.launch.py",
+  "launch_arguments": {},
+  "declared_arguments": {
+    "node_name": {
+      "default": "default_node",
+      "description": "Name for the node"
+    },
+    "input_topic": {
+      "default": "/default_input",
+      "description": "Input topic to remap"
+    }
+  },
+  "nodes": [
+    {
+      "type": "node",
+      "package": "test_nodes",
+      "executable": "node_a",
+      "name": "default_node",
+      "namespace": "/test_ns",
+      "fully_qualified_name": "/test_ns/default_node",
+      "remappings": [
+        ["input", "/default_input"],
+        ["output", "/global_output"]
+      ],
+      "parameter_sources": [],
+      "parameters": {},
+      "cmd": ["ros2", "run", "test_nodes", "node_a", "--ros-args", "-r", "__node:=default_node", "-r", "__ns:=/test_ns", "-r", "input:=/default_input", "-r", "output:=/global_output"],
+      "source_file": "<TEST_WS>/src/test_nodes/launch/remappings_and_args.launch.py"
+    }
+  ],
+  "includes": []
+}

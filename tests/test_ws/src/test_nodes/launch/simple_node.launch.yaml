@@ -1,0 +1,6 @@
+launch:
+  - node:
+      pkg: test_nodes
+      exec: node_a
+      name: yaml_node
+      namespace: /test_ns

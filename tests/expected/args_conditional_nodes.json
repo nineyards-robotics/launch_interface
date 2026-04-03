@@ -1,0 +1,7 @@
+[
+  {
+    "name": "use_node_b",
+    "default": "true",
+    "description": "Whether to launch node_b"
+  }
+]

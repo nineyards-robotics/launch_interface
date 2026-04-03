@@ -1,0 +1,10 @@
+/test_ns/param_node:
+  ros__parameters:
+    file_param_str: "from_file"
+    file_param_int: 100
+    file_param_float: 3.14
+    file_param_bool: true
+
+/**:
+  ros__parameters:
+    wildcard_param: "applies_to_all"

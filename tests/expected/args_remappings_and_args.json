@@ -1,0 +1,12 @@
+[
+  {
+    "name": "node_name",
+    "default": "default_node",
+    "description": "Name for the node"
+  },
+  {
+    "name": "input_topic",
+    "default": "/default_input",
+    "description": "Input topic to remap"
+  }
+]
