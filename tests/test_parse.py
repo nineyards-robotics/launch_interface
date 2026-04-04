@@ -156,3 +156,9 @@ def test_env_var_substitution(run_parse, launch_file_path, assert_json):
 def test_include_substitution_arg(run_parse, launch_file_path, assert_json):
     actual = run_parse(launch_file_path('include_substitution_arg.launch.py'))
     assert_json(actual, 'parse_include_substitution_arg.json')
+
+
+# 20. Node without a name — name and fqn should be null
+def test_unnamed_node(run_parse, launch_file_path, assert_json):
+    actual = run_parse(launch_file_path('unnamed_node.launch.py'))
+    assert_json(actual, 'parse_unnamed_node.json')

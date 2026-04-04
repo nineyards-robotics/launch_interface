@@ -60,6 +60,10 @@ def _extract_name_and_namespace(action: Node) -> tuple[str | None, str, str | No
             else:
                 namespace = '/'
                 name = parts[0]
+
+            if Node.UNSPECIFIED_NODE_NAME in fqn:
+                return None, namespace, None
+
             return name, namespace, fqn
     except Exception:
         pass
