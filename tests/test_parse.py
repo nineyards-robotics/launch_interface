@@ -150,3 +150,9 @@ def test_param_override(run_parse, launch_file_path, assert_json):
 def test_env_var_substitution(run_parse, launch_file_path, assert_json):
     actual = run_parse(launch_file_path('env_var_substitution.launch.py'))
     assert_json(actual, 'parse_env_var.json')
+
+
+# 19. Include with LaunchConfiguration substitution as argument value
+def test_include_substitution_arg(run_parse, launch_file_path, assert_json):
+    actual = run_parse(launch_file_path('include_substitution_arg.launch.py'))
+    assert_json(actual, 'parse_include_substitution_arg.json')

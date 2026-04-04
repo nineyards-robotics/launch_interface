@@ -18,6 +18,7 @@ from launch.actions import (
     IncludeLaunchDescription,
     SetLaunchConfiguration,
 )
+from launch.substitution import Substitution
 from launch_ros.actions import LoadComposableNodes
 
 
@@ -211,9 +212,13 @@ def _make_recording_include(original_execute, registry: DryRunRegistry):
         for arg_action in self._IncludeLaunchDescription__launch_arguments:
             if isinstance(arg_action, tuple) and len(arg_action) == 2:
                 key, value = arg_action
-                if hasattr(key, '__iter__') and not isinstance(key, str):
+                if isinstance(key, Substitution):
+                    key = perform_substitutions(context, [key])
+                elif hasattr(key, '__iter__') and not isinstance(key, str):
                     key = perform_substitutions(context, key)
-                if hasattr(value, '__iter__') and not isinstance(value, str):
+                if isinstance(value, Substitution):
+                    value = perform_substitutions(context, [value])
+                elif hasattr(value, '__iter__') and not isinstance(value, str):
                     value = perform_substitutions(context, value)
                 launch_args[str(key)] = str(value)
 
