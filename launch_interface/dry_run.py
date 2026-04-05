@@ -7,6 +7,7 @@ processes from being spawned or ROS service calls from being made.
 from __future__ import annotations
 
 import asyncio
+import io
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -360,11 +361,41 @@ def dry_run(
                 arg_actions + list(launch_description.entities)
             )
 
-        # Suppress launch logging to avoid polluting JSON output
+        # Route launch logging to an in-memory buffer so it doesn't pollute
+        # JSON output on stdout, but remains available to surface if the run
+        # fails. launch.logging installs its own per-logger stdout + file
+        # handlers (see launch.logging.LaunchConfig.get_screen_handler /
+        # get_log_file_handler), so we need to both (a) replace handlers on
+        # every already-created launch* logger, and (b) patch the factory
+        # methods so any logger created later during ls.run() also routes
+        # to our buffer.
         import logging
-        launch_logger = logging.getLogger('launch')
-        old_level = launch_logger.level
-        launch_logger.setLevel(logging.CRITICAL)
+        import launch.logging as launch_logging
+
+        log_buffer = io.StringIO()
+
+        # Replace the shared screen handler's stream with our buffer so any
+        # already-attached and future launch loggers write to the buffer
+        # instead of stdout. File handlers (which write to disk) are left
+        # alone — they don't pollute stdout and have a custom
+        # setFormatterFor API that launch relies on.
+        launch_config = launch_logging.launch_config
+        screen_handler = launch_config.get_screen_handler()
+        saved_stream = screen_handler.stream
+        saved_formatter = screen_handler.formatter
+        saved_level = screen_handler.level
+        screen_handler.setStream(log_buffer)
+        screen_handler.setFormatter(
+            logging.Formatter('[%(levelname)s] [%(name)s]: %(message)s')
+        )
+        screen_handler.setLevel(logging.DEBUG)
+
+        saved_logger_state: list[tuple[logging.Logger, int]] = []
+        for logger_name in list(logging.root.manager.loggerDict.keys()):
+            if logger_name == 'launch' or logger_name.startswith('launch.'):
+                lg = logging.getLogger(logger_name)
+                saved_logger_state.append((lg, lg.level))
+                lg.setLevel(logging.DEBUG)
 
         # Create and run the launch service
         ls = LaunchService(noninteractive=True)
@@ -379,14 +410,21 @@ def dry_run(
         try:
             rc = ls.run()
         finally:
-            launch_logger.setLevel(old_level)
+            screen_handler.setStream(saved_stream)
+            screen_handler.setFormatter(saved_formatter)
+            screen_handler.setLevel(saved_level)
+            for lg, level in saved_logger_state:
+                lg.setLevel(level)
             if environment is not None:
                 os.environ.clear()
                 os.environ.update(old_env)
 
         if rc != 0:
+            captured = log_buffer.getvalue().strip()
+            detail = f'\n{captured}' if captured else ''
             raise RuntimeError(
                 f'Launch file execution failed with return code {rc}'
+                f'{detail}'
             )
 
     registry._source_file_stack.pop()

@@ -12,6 +12,10 @@ maintainers = [
     {name = "Alistair English", email = "hello@alistairenglish.com"},
 ]
 
+# colcon test uses this to select pytest over setuppy_test
+[project.optional-dependencies]
+test = ["pytest"]
+
 [project.scripts]
 launch_interface = "launch_interface.cli:main"
 

@@ -7,6 +7,7 @@ resolve test_nodes packages and executables.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -36,17 +37,37 @@ def test_ws_env() -> dict[str, str]:
     )
 
     if needs_build:
+        env = os.environ.copy()
+        # Ensure runtime library dirs are also visible to the build-time
+        # linker so that -l flags (e.g. -llttng-ust) resolve correctly.
+        ld_lib = env.get("LD_LIBRARY_PATH", "")
+        if ld_lib:
+            existing = env.get("LIBRARY_PATH", "")
+            env["LIBRARY_PATH"] = ld_lib + (":" + existing if existing else "")
+
         subprocess.check_call(
-            ['colcon', 'build', '--paths', 'src/test_nodes'],
+            ['colcon', 'build', '--base-paths', 'src'],
             cwd=str(TEST_WS),
+            env=env,
         )
 
-    # Source the install overlay to get the modified environment
-    setup_bash = install_dir / 'setup.bash'
-    assert setup_bash.exists(), f'setup.bash not found at {setup_bash}'
+    # Use local_setup.bash (not setup.bash): setup.bash chains to whatever
+    # underlay was active at colcon-build time, which on CI re-activates the
+    # outer ros_ws and leaks unrelated packages into the test env.
+    # local_setup.bash only sets up this workspace and prepends to the
+    # inherited AMENT_PREFIX_PATH / CMAKE_PREFIX_PATH, so the currently-active
+    # ROS install (e.g. the pixi env providing rclcpp_components, composition,
+    # etc.) remains available to resolve stock packages referenced by the
+    # test launch files.
+    setup_bash = install_dir / 'local_setup.bash'
+    assert setup_bash.exists(), f'local_setup.bash not found at {setup_bash}'
 
     result = subprocess.run(
-        ['bash', '-c', f'source {setup_bash} && env -0'],
+        [
+            'bash',
+            '-c',
+            f'source {setup_bash} && env -0',
+        ],
         capture_output=True,
         text=True,
         check=True,

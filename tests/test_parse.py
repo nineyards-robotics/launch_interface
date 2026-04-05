@@ -162,3 +162,40 @@ def test_include_substitution_arg(run_parse, launch_file_path, assert_json):
 def test_unnamed_node(run_parse, launch_file_path, assert_json):
     actual = run_parse(launch_file_path('unnamed_node.launch.py'))
     assert_json(actual, 'parse_unnamed_node.json')
+
+
+# 21. Launch-time failure surfaces the root-cause in stderr.
+# dry_run redirects launch's screen logger to an in-memory buffer (so
+# successful runs emit clean JSON on stdout) and must re-emit that buffer
+# as part of the RuntimeError when the launch service exits non-zero.
+# Without this, users just see "Launch file execution failed with return
+# code 1" and have no way to diagnose the real problem.
+def test_launch_failure_surfaces_root_cause(test_ws_env, tmp_path):
+    broken = tmp_path / 'broken.launch.py'
+    broken.write_text(
+        'from launch import LaunchDescription\n'
+        'from launch_ros.actions import Node\n'
+        'def generate_launch_description():\n'
+        '    return LaunchDescription([\n'
+        "        Node(package='definitely_not_a_real_pkg_xyz',\n"
+        "             executable='foo', name='bar'),\n"
+        '    ])\n'
+    )
+    result = subprocess.run(
+        [sys.executable, '-m', 'launch_interface', 'parse', str(broken)],
+        capture_output=True,
+        text=True,
+        env=test_ws_env,
+    )
+    assert result.returncode != 0, 'broken launch file should fail'
+    assert result.stdout == '', (
+        f'stdout should stay clean on failure, got: {result.stdout!r}'
+    )
+    # The RuntimeError itself is always present; the real test is that the
+    # underlying launch error (captured from the launch logger) is attached.
+    assert 'PackageNotFoundError' in result.stderr, (
+        f'root-cause missing from stderr:\n{result.stderr}'
+    )
+    assert 'definitely_not_a_real_pkg_xyz' in result.stderr, (
+        f'offending package name missing from stderr:\n{result.stderr}'
+    )
